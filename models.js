@@ -15,10 +15,7 @@ const Gift = new Schema({
 
 var Person = new Schema({
   id: String,
-  name: {
-    first: String,
-    last: String
-  },
+  name: String,
   wishlist: [ String ],
   state: String,
   currentGiftId: String

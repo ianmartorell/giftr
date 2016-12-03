@@ -257,7 +257,7 @@ function receivedMessage(event) {
   Person.findOne({ id: senderID }, function (err, person) {
     if (person == null) {
       callGraphAPI(senderID, function({ firstName, lastName }) {
-        person = new Person({ id: senderID, name: { first: firstName, last: lastName } });
+        person = new Person({ id: senderID, name: `${firstName} ${lastName}` });
         person.save(function (err) {
           console.error(err);
         });
@@ -276,9 +276,9 @@ function handleMessage(person, messageText) {
       sendInitialMessage(person);
       break;
     case "initial":
-      const names = messageText.match(/^find (.*)$/g);
+      const names = /^find (.*)$/ig.exec(messageText);
       if (names && names.length) {
-        sendFindMessage(person);
+        sendFindMessage(person, names[1]);
       } else {
         switch (messageText) {
           case "wishlist":
@@ -512,7 +512,7 @@ function sendImageSavedMessage(person, image){
 function sendWishlistMessage(person, messageText) {
   if (!person.wishlist || !person.wishlist.length) {
     console.log("person wishlist is null!");
-    const message = `You haven´t created your gifts wishlist yet.
+    const message = `You haven't created your gifts wishlist yet.
 Let's get started on that.
 Type the title of the gift you want.`;
     var messageData = {
@@ -535,7 +535,7 @@ Type the title of the gift you want.`;
 
 function sendInitialMessage(person) {
   console.log('test');
-  const message = `Hello ${person.name.first} !
+  const message = `Hello ${person.name.substr(0, person.name.indexOf(' '))}!
 We facilitate people to discover what their family and friends want to get for their birthdays!
 Tell me, what do you desire?
 Type:
@@ -568,6 +568,30 @@ Can you please repeat the message?`;
     }
   };
   callSendAPI(messageData);
+}
+
+function sendFindMessage(person, name) {
+  const Person = mongoose.model('Person');
+  console.log(name);
+  Person.find({ name: new RegExp(name, "i") }, function (err, people) {
+    const person = people[0];
+    const Gift = mongoose.model('Gift');
+    Gift.find({ _id: { $in: person.wishlist } }, function(err, gifts) {
+      if (gifts.length) {
+        let giftsList = `Here's ${person.name}'s wishlist:\n`;
+        for (let i = 0; i < gifts.length; i++) {
+          giftsList += `${i+1}: ${gifts[i].title}\n`;
+        }
+        giftsList += '\nType the number of the gift to get more information about it or type "buy [name of gift]" to confirm you\'re buying this gift';
+
+        sendTextMessage(person.id, giftsList);
+      } else {
+        sendTextMessage(person.id, "This person hasn't created a wishlist yet.");
+      }
+      person.state = "shownOtherPersonWishlist";
+      person.save(function(err){console.log(err)});
+    })
+  });
 }
 
 /*
