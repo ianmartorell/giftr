@@ -316,10 +316,10 @@ function handleMessage(person, messageText) {
     case "shownOtherPersonWishlist":
       const giftNumber = /^buy (.*)$/ig.exec(messageText);
       if (giftNumber && giftNumber.length) {
-        sendMoreInfoAboutGiftMessage(person, giftNumber[1]);
+        sendGiftBuyConfirmationMessage(person, giftNumber[1]);
       } else {
         if (!isNaN(messageText)) {
-          sendGiftBuyConfirmationMessage(person, messageText);
+          sendMoreInfoAboutGiftMessage(person, messageText);
         } else {
             sendDontUnderstandMessage(person);
         }
@@ -432,6 +432,17 @@ function sendShareMessage(person){
     }
   };
   callSendAPI(messageData);
+}
+
+function sendGiftBuyConfirmationMessage(person, giftNumber) {
+  const Person = mongoose.model('Person');
+  Person.find({ _id: person.currentSearchedPersonId }, function(err, searchedPerson) {
+    const Gift = mongoose.model('Gift');
+    Gift.find({ _id: { $in: searchedPerson.wishlist } }, function(err, gifts) {
+      const gift = gifts[giftNumber-1];
+      sendTextMessage(person.id, "Okay! We'll scratch that gift from the list.");
+    });
+  });
 }
 
 function sendTitleWrittenWishlistMessage(person, messageText){
@@ -584,22 +595,22 @@ Can you please repeat the message?`;
 
 function sendFindMessage(person, name) {
   const Person = mongoose.model('Person');
-  console.log(name);
   Person.find({ name: new RegExp(name, "i") }, function (err, people) {
-    const person = people[0];
+    const searchedPerson = people[0];
     const Gift = mongoose.model('Gift');
-    Gift.find({ _id: { $in: person.wishlist } }, function(err, gifts) {
+    Gift.find({ _id: { $in: searchedPerson.wishlist } }, function(err, gifts) {
       if (gifts.length) {
-        let giftsList = `Here's ${person.name}'s wishlist:\n`;
+        let giftsList = `Here's ${searchedPerson.name}'s wishlist:\n`;
         for (let i = 0; i < gifts.length; i++) {
           giftsList += `${i+1}: ${gifts[i].title}\n`;
         }
         giftsList += '\nType the number of the gift to get more information about it or type "buy [name of gift]" to confirm you\'re buying this gift';
 
-        sendTextMessage(person.id, giftsList);
+        sendTextMessage(searchedPerson.id, giftsList);
       } else {
-        sendTextMessage(person.id, "This person hasn't created a wishlist yet.");
+        sendTextMessage(searchedPerson.id, "This person hasn't created a wishlist yet.");
       }
+      person.currentSearchedPersonId = searchedPerson._id;
       person.state = "shownOtherPersonWishlist";
       person.save(function(err){console.log(err)});
     })
