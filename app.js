@@ -261,10 +261,15 @@ function receivedMessage(event) {
         person.save(function (err) {
           console.error(err);
         });
+        handleMessage(senderID, messageText);
       });
+    } else {
+      handleMessage(senderID, messageText);
     }
   });
+}
 
+function handleMessage(senderID, messageText) {
   if (messageText) {
     // If we receive a text message, check to see if it matches any special
     // keywords and send back the corresponding example. Otherwise, just echo
