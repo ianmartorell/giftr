@@ -313,6 +313,18 @@ function handleMessage(person, messageText) {
           sendInitialMessage(person);
       }
       break;
+    case "shownOtherPersonWishlist":
+      const giftNumber = /^buy (.*)$/ig.exec(messageText);
+      if (giftNumber && giftNumber.length) {
+        sendMoreInfoAboutGiftMessage(person, giftNumber[1]);
+      } else {
+        if (!isNaN(messageText)) {
+          sendGiftBuyConfirmationMessage(person, messageText);
+        } else {
+            sendDontUnderstandMessage(person);
+        }
+      }
+      break;
     default:
       sendDontUnderstandMessage(person);
   }
