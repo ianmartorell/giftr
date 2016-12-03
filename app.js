@@ -575,7 +575,7 @@ function sendButtonMessage(recipientId) {
 function sendGenericMessage(recipientId) {
   var messageData = {
     recipient: {
-      id: recipientId
+      id: "gibran.pulga"
     },
     message: {
       attachment: {
