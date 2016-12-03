@@ -1,11 +1,15 @@
-# Messenger Platform Sample -- node.js
+# Giftr
 
-This project is an example server for Messenger Platform built in Node.js. With this app, you can send it messages and it will echo them back to you. You can also see examples of the different types of Structured Messages. 
+We used the following as our boilerplate.
+
+## Messenger Platform Sample -- node.js
+
+This project is an example server for Messenger Platform built in Node.js. With this app, you can send it messages and it will echo them back to you. You can also see examples of the different types of Structured Messages.
 
 It contains the following functionality:
 
 * Webhook (specifically for Messenger Platform events)
-* Send API 
+* Send API
 * Web Plugins
 * Messenger Platform v1.1 features
 
