@@ -386,7 +386,7 @@ function handleMessage(person, messageText) {
 function sendShareMessage(person){
   var messageData = {
     recipient: {
-      id: recipientId
+      id: person.id
     },
     "message":{
     "attachment":{
@@ -397,7 +397,7 @@ function sendShareMessage(person){
           {
             "title":"Hi! I have a wishlist for my birthday!",
             "subtitle":`Like Giftr on Facebook and send it a message with find ${person.name} to check it out!`,
-            "image_url":"https://thechangreport.com/img/lightning.png",
+            "image_url":"https://images.unsplash.com/photo-1455732063391-5f50f4df1854?dpr=2&auto=format&fit=crop&w=1500&h=1000&q=80&cs=tinysrgb&crop=",
             "buttons":[
               {
                 "type":"element_share"
@@ -409,7 +409,16 @@ function sendShareMessage(person){
     }
   }
   };
-
+  callSendAPI(messageData);
+  var messageData = {
+    recipient: {
+      id: person.id
+    },
+    message: {
+      text: `Shared! Type "another" to save another gift or anything else to go back to the beggining.`,
+      metadata: "DEVELOPER_DEFINED_METADATA"
+    }
+  };
   callSendAPI(messageData);
 }
 
@@ -429,7 +438,7 @@ function sendTitleWrittenWishlistMessage(person, messageText){
   const gift = new Gift({title: messageText});
   gift.save(function(err, gift){
     person.wishlist.push(gift._id);
-    person.currentGiftId = gift._id;
+    person.currentperson.currentGiftId = gift._id;
     person.state = "urlWrittenWishlist";
     person.save(function(err){console.log(err)});
   })
@@ -448,9 +457,8 @@ function sendUrlWrittenWishlistMessage(person, messageText){
     }
   };
   callSendAPI(messageData);
-  const giftId = person.currentGiftId;
   const Gift = mongoose.model('Gift');
-  Gift.findOne({_id: giftId}, function(err, gift){
+  Gift.findOne({_id: person.currentGiftId}, function(err, gift){
     gift.url = messageText;
     gift.save(function(err){console.log(err)});
   });
@@ -472,7 +480,7 @@ function sendDescriptionWrittenWishlistMessage(person, messageText){
   };
   callSendAPI(messageData);
   const Gift = mongoose.model('Gift');
-  Gift.findOne({_id: giftId}, function(err, gift){
+  Gift.findOne({_id: person.currentGiftId}, function(err, gift){
     gift.description = messageText;
     gift.save(function(err){console.log(err)});
   });
@@ -493,7 +501,7 @@ function sendImageSavedMessage(person, image){
   };
   callSendAPI(messageData);
   const Gift = mongoose.model('Gift');
-  Gift.findOne({_id: giftId}, function(err, gift){
+  Gift.findOne({_id: person.currentGiftId}, function(err, gift){
     gift.image = image;
     gift.save(function(err){console.log(err)});
   });
