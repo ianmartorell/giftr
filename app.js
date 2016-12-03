@@ -395,6 +395,36 @@ function handleMessage(person, messageText) {
   }
   */
 }
+function sendMoreInfoAboutGiftMessage(person, number){
+  const Person = mongoose.model('Person');
+  Person.find({ _id: person.currentSearchedPersonId }, function(err, searchedPerson) {
+    const Gift = mongoose.model('Gift');
+    Gift.find({ _id: { $in: searchedPerson.wishlist } }, function(err, gifts) {
+      const gift = gifts[number-1];
+    });
+    var messageData = {
+      recipient: {
+        id: person.id
+      },
+      message: {
+        attachment: {
+          type: "template",
+          payload: {
+            template_type: "generic",
+            elements: [{
+              title: `${gift.title}`,
+              subtitle: `${gift.description}`,
+              item_url: `${gift.url}`,
+              image_url: "http://mividaescorrer.com/wp-content/uploads/2016/10/Sabias-que-Pizza.png",
+            }]
+          }
+        }
+      }
+    };
+    callSendAPI(messageData);
+  });
+}
+
 function sendShareMessage(person){
   var messageData = {
     recipient: {
