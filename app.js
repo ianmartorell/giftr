@@ -271,6 +271,7 @@ function receivedMessage(event) {
 
 function handleMessage(person, messageText) {
   switch (person.state) {
+    case undefined:
     case null:
       sendInitialMessage(person);
       person.state = "initial";
@@ -278,16 +279,18 @@ function handleMessage(person, messageText) {
         console.log(err);
       });
       break;
-    case "inital":
-      switch (messageText) {
-        case "wishlist":
-          sendWishlistMessage(person);
-          break;
-        case "find":
-          sendFindMessage(person);
-          break;
-        default:
-          sendDontUnderstandMessage(person);
+    case "initial":
+      const names = messageText.match(/^find (.*)$/g);
+      if (names.length) {
+        sendFindMessage(person);
+      } else {
+        switch (messageText) {
+          case "wishlist":
+            sendWishlistMessage(person);
+            break;
+          default:
+            sendDontUnderstandMessage(person);
+        }
       }
       break;
     case "initialWishlist":
@@ -306,7 +309,7 @@ function handleMessage(person, messageText) {
       sendImageSentWishlistMessage(person);
       break;
     default:
-
+      sendDontUnderstandMessage(person);
   }
 
   /*
@@ -402,12 +405,13 @@ Type the title of the gift you want.`;
 }
 
 function sendInitialMessage(person) {
+  console.log('test');
   const message = `Hello ${person.name.first} !
 We facilitate people to discover what their family and friends want to get for their birthdays!
 Tell me, what do you desire?
 Type:
     "wishlist" - to create or update your wishlist for gifts
-    "find [name]" - to search for someone's else wishlist for gifts suggestion`;
+    "find [name]" - to search for someone else's wishlist for gifts suggestions`;
 
   var messageData = {
     recipient: {
@@ -421,7 +425,7 @@ Type:
 
   callSendAPI(messageData);
 }
-function dontUnderstandMessage(person) {
+function sendDontUnderstandMessage(person) {
   const message = `Sorry, I didn't understand you.
 Can you please repeat the message?`;
   var messageData = {
