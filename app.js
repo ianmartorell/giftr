@@ -253,15 +253,14 @@ function receivedMessage(event) {
     return;
   }
 
-  const Person = mongoose.model('Person')  ;
+  const Person = mongoose.model('Person');
   Person.findOne({ id: senderID }, function (err, person) {
     if (person == null) {
-      console.log(callGraphAPI(senderID));
-      // const { firstName, lastName } = callGraphAPI(senderID);
-
-      person = new Person({ id: senderID, name: { first: firstName, last: lastName } });
-      person.save(function (err) {
-        console.error(err);
+      callGraphAPI(senderID, function({ firstName, lastName }) {
+        person = new Person({ id: senderID, name: { first: firstName, last: lastName } });
+        person.save(function (err) {
+          console.error(err);
+        });
       });
     }
   });
@@ -847,23 +846,16 @@ function callSendAPI(messageData) {
  * Call the Graph API.
  *
  */
-function callGraphAPI({ userId }) {
+function callGraphAPI(userId, callback) {
   request({
-    uri: `https://graph.facebook.com/v2.6/${userId}`,
-    qs: {
-      access_token: PAGE_ACCESS_TOKEN,
-      fields: `first_name,last_name`
-    },
+    uri: `https://graph.facebook.com/v2.6/${userId}?fields=first_name,last_name&access_token=${PAGE_ACCESS_TOKEN}`,
     method: 'GET'
-  }, function (error, response, body) {
-    console.log('response', response);
+  }, function (error, response) {
     if (!error && response.statusCode == 200) {
-      console.log('body', body);
-      var firstName = body.first_name;
-      var lastName = body.last_name;
-      return { firstName, lastName };
+      var body = JSON.parse(response.body);
+      callback({ 'firstName': body.first_name, 'lastName': body.last_name });
     } else {
-      console.error("Failed calling Send API", response.statusCode, response.statusMessage, body.error);
+      console.error("Failed calling Graph API", response.statusCode, response.statusMessage);
     }
   });
 }
