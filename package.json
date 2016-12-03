@@ -4,7 +4,7 @@
   "description": "Get started example for Messenger Platform",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
+    "start": "babel-node app.js",
     "lint": "jshint --exclude node_modules .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -18,10 +18,18 @@
     "body-parser": "^1.15.0",
     "config": "^1.20.4",
     "ejs": "^2.4.2",
+    "eslint": "^3.11.1",
     "express": "^4.13.4",
+    "mongodb": "^2.2.12",
+    "mongoose": "^4.7.1",
     "request": "^2.72.0"
   },
   "engines": {
     "node": "~4.1.2"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.18.0",
+    "babel-core": "^6.18.2",
+    "babel-preset-latest": "^6.16.0"
   }
 }
