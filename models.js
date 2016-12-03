@@ -19,7 +19,8 @@ var Person = new Schema({
     first: String,
     last: String
   },
-  wishlist: [ String ]
+  wishlist: [ String ],
+  state: String
 });
 
 mongoose.model('Gift', Gift);

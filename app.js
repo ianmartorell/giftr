@@ -261,15 +261,55 @@ function receivedMessage(event) {
         person.save(function (err) {
           console.error(err);
         });
-        handleMessage(senderID, messageText);
+        handleMessage(person, messageText);
       });
     } else {
-      handleMessage(senderID, messageText);
+      handleMessage(person, messageText);
     }
   });
 }
 
-function handleMessage(senderID, messageText) {
+function handleMessage(person, messageText) {
+  switch (person.state) {
+    case null:
+      sendInitialMessage(person);
+      person.state = "initial";
+      person.save(function(err){
+        console.log(err);
+      });
+      break;
+    case "inital":
+      switch (messageText) {
+        case "wishlist":
+          sendWishlistMessage(person);
+          break;
+        case "find":
+          sendFindMessage(person);
+          break;
+        default:
+          sendDontUnderstandMessage(person);
+      }
+      break;
+    case "initialWishlist":
+      sendInitialWishlistMessage(person);
+      break;
+    case "titleWrittenWishlist":
+      sendTitleWrittenWishlistMessage(person);
+      break;
+    case "urlWrittenWishlist":
+      sendUrlWrittenWishlistMessage(person);
+      break;
+    case "descriptionWrittenWishlist":
+      sendDescriptionWrittenWishlistMessage(person);
+      break;
+    case "imageSentWishlist":
+      sendImageSentWishlistMessage(person);
+      break;
+    default:
+
+  }
+
+  /*
   if (messageText) {
     // If we receive a text message, check to see if it matches any special
     // keywords and send back the corresponding example. Otherwise, just echo
@@ -333,8 +373,68 @@ function handleMessage(senderID, messageText) {
   } else if (messageAttachments) {
     sendTextMessage(senderID, "Message with attachment received");
   }
+  */
+}
+function sendInitialWishlistMessage(person){
+
 }
 
+function sendWishlistMessage(person) {
+  if (person.wishlist == null) {
+    const message = `You haven´t created your gifts wishlist yet.
+Let's get started on that.
+Type the title of the gift you want.`;
+    var messageData = {
+      recipient: {
+        id: person.id
+      },
+      message: {
+        text: message,
+        metadata: "DEVELOPER_DEFINED_METADATA"
+      }
+    };
+    callSendAPI(messageData);
+    person.state = "initialWishlist";
+    person.save(function(err){console.log(err)});
+  } else {
+
+  }
+}
+
+function sendInitialMessage(person) {
+  const message = `Hello ${person.name.first} !
+We facilitate people to discover what their family and friends want to get for their birthdays!
+Tell me, what do you desire?
+Type:
+    "wishlist" - to create or update your wishlist for gifts
+    "find [name]" - to search for someone's else wishlist for gifts suggestion`;
+
+  var messageData = {
+    recipient: {
+      id: person.id
+    },
+    message: {
+      text: message,
+      metadata: "DEVELOPER_DEFINED_METADATA"
+    }
+  };
+
+  callSendAPI(messageData);
+}
+function dontUnderstandMessage(person) {
+  const message = `Sorry, I didn't understand you.
+Can you please repeat the message?`;
+  var messageData = {
+    recipient: {
+      id: person.id
+    },
+    message: {
+      text: message,
+      metadata: "DEVELOPER_DEFINED_METADATA"
+    }
+  };
+  callSendAPI(messageData);
+}
 
 /*
  * Delivery Confirmation Event
