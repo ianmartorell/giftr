@@ -281,7 +281,7 @@ function handleMessage(person, messageText) {
       break;
     case "initial":
       const names = messageText.match(/^find (.*)$/g);
-      if (names.length) {
+      if (names && names.length) {
         sendFindMessage(person);
       } else {
         switch (messageText) {
