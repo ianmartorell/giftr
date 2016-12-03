@@ -274,10 +274,6 @@ function handleMessage(person, messageText) {
     case undefined:
     case null:
       sendInitialMessage(person);
-      person.state = "initial";
-      person.save(function(err){
-        console.log(err);
-      });
       break;
     case "initial":
       const names = messageText.match(/^find (.*)$/g);
@@ -286,27 +282,36 @@ function handleMessage(person, messageText) {
       } else {
         switch (messageText) {
           case "wishlist":
-            sendWishlistMessage(person);
+            sendWishlistMessage(person, messageText);
             break;
           default:
             sendDontUnderstandMessage(person);
         }
       }
       break;
-    case "initialWishlist":
-      sendInitialWishlistMessage(person);
-      break;
     case "titleWrittenWishlist":
-      sendTitleWrittenWishlistMessage(person);
+      sendTitleWrittenWishlistMessage(person, messageText);
       break;
     case "urlWrittenWishlist":
-      sendUrlWrittenWishlistMessage(person);
+      sendUrlWrittenWishlistMessage(person, messageText);
       break;
     case "descriptionWrittenWishlist":
-      sendDescriptionWrittenWishlistMessage(person);
+      sendDescriptionWrittenWishlistMessage(person, messageText);
       break;
     case "imageSentWishlist":
-      sendImageSentWishlistMessage(person);
+      sendImageSavedMessage(person, messageText);
+      break;
+    case "giftSaved":
+      switch (messageText) {
+        case "another":
+          sendWishlistMessage(person);
+          break;
+        case "share":
+          sendShareMessage(person);
+          break;
+        default:
+          sendInitialMessage(person);
+      }
       break;
     default:
       sendDontUnderstandMessage(person);
@@ -378,12 +383,127 @@ function handleMessage(person, messageText) {
   }
   */
 }
-function sendInitialWishlistMessage(person){
+function sendShareMessage(person){
+  var messageData = {
+    recipient: {
+      id: recipientId
+    },
+    "message":{
+    "attachment":{
+      "type":"template",
+      "payload":{
+        "template_type":"generic",
+        "elements":[
+          {
+            "title":"Hi! I have a wishlist for my birthday!",
+            "subtitle":`Like Giftr on Facebook and send it a message with find ${person.name} to check it out!`,
+            "image_url":"https://thechangreport.com/img/lightning.png",
+            "buttons":[
+              {
+                "type":"element_share"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+  };
+
+  callSendAPI(messageData);
+}
+
+function sendTitleWrittenWishlistMessage(person, messageText){
+  const message = `Now, paste the URL of the gift (type "none" if there is not any).`;
+  var messageData = {
+    recipient: {
+      id: person.id
+    },
+    message: {
+      text: message,
+      metadata: "DEVELOPER_DEFINED_METADATA"
+    }
+  };
+  callSendAPI(messageData);
+  const Gift = mongoose.model('Gift');
+  const gift = new Gift({title: messageText});
+  gift.save(function(err, gift){
+    person.wishlist.push(gift._id);
+    person.currentGiftId = gift._id;
+    person.state = "urlWrittenWishlist";
+    person.save(function(err){console.log(err)});
+  })
 
 }
 
-function sendWishlistMessage(person) {
-  if (person.wishlist == null) {
+function sendUrlWrittenWishlistMessage(person, messageText){
+  const message = `Now, type some description or comments. Type "none" to skip it.`;
+  var messageData = {
+    recipient: {
+      id: person.id
+    },
+    message: {
+      text: message,
+      metadata: "DEVELOPER_DEFINED_METADATA"
+    }
+  };
+  callSendAPI(messageData);
+  const giftId = person.currentGiftId;
+  const Gift = mongoose.model('Gift');
+  Gift.findOne({_id: giftId}, function(err, gift){
+    gift.url = messageText;
+    gift.save(function(err){console.log(err)});
+  });
+  person.state = "descriptionWrittenWishlist";
+  person.save(function(err){console.log(err)});
+}
+
+
+function sendDescriptionWrittenWishlistMessage(person, messageText){
+  const message = `Great, now optionally you can send us an image of the gift, or just type "none" if there is not any.`;
+  var messageData = {
+    recipient: {
+      id: person.id
+    },
+    message: {
+      text: message,
+      metadata: "DEVELOPER_DEFINED_METADATA"
+    }
+  };
+  callSendAPI(messageData);
+  const Gift = mongoose.model('Gift');
+  Gift.findOne({_id: giftId}, function(err, gift){
+    gift.description = messageText;
+    gift.save(function(err){console.log(err)});
+  });
+  person.state = "imageSentWishlist";
+  person.save(function(err){console.log(err)});
+}
+
+function sendImageSavedMessage(person, image){
+  const message = `Saved! Type "another" to save another gift, "share" to share your wishlist or anything else to go back to the beggining.`;
+  var messageData = {
+    recipient: {
+      id: person.id
+    },
+    message: {
+      text: message,
+      metadata: "DEVELOPER_DEFINED_METADATA"
+    }
+  };
+  callSendAPI(messageData);
+  const Gift = mongoose.model('Gift');
+  Gift.findOne({_id: giftId}, function(err, gift){
+    gift.image = image;
+    gift.save(function(err){console.log(err)});
+  });
+  person.state = "giftSaved";
+  person.save(function(err){console.log(err)});
+}
+
+function sendWishlistMessage(person, messageText) {
+  if (!person.wishlist || !person.wishlist.length) {
+    console.log("person wishlist is null!");
     const message = `You haven´t created your gifts wishlist yet.
 Let's get started on that.
 Type the title of the gift you want.`;
@@ -397,10 +517,11 @@ Type the title of the gift you want.`;
       }
     };
     callSendAPI(messageData);
-    person.state = "initialWishlist";
+    person.state = "titleWrittenWishlist";
     person.save(function(err){console.log(err)});
   } else {
-
+    console.log(person.wishlist);
+    console.log('person wishlist isnt null!');
   }
 }
 
@@ -422,7 +543,8 @@ Type:
       metadata: "DEVELOPER_DEFINED_METADATA"
     }
   };
-
+  person.state = "initial";
+  person.save(function(err){console.log(err)});
   callSendAPI(messageData);
 }
 function sendDontUnderstandMessage(person) {
