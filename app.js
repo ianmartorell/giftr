@@ -395,33 +395,36 @@ function handleMessage(person, messageText) {
   }
   */
 }
-function sendMoreInfoAboutGiftMessage(person, number){
+function sendMoreInfoAboutGiftMessage(person, giftNumber){
   const Person = mongoose.model('Person');
   Person.find({ _id: person.currentSearchedPersonId }, function(err, searchedPerson) {
     const Gift = mongoose.model('Gift');
     Gift.find({ _id: { $in: searchedPerson.wishlist } }, function(err, gifts) {
-      const gift = gifts[number-1];
-    });
-    var messageData = {
-      recipient: {
-        id: person.id
-      },
-      message: {
-        attachment: {
-          type: "template",
-          payload: {
-            template_type: "generic",
-            elements: [{
-              title: `${gift.title}`,
-              subtitle: `${gift.description}`,
-              item_url: `${gift.url}`,
-              image_url: "http://mividaescorrer.com/wp-content/uploads/2016/10/Sabias-que-Pizza.png",
-            }]
+      const gift = gifts[giftNumber-1];
+      console.log(gifts);
+      console.log(giftNumber);
+      var messageData = {
+        recipient: {
+          id: person.id
+        },
+        message: {
+          attachment: {
+            type: "template",
+            payload: {
+              template_type: "generic",
+              elements: [{
+                title: `${gift.title}`,
+                subtitle: `${gift.description}`,
+                item_url: `${gift.url}`,
+                image_url: "http://mividaescorrer.com/wp-content/uploads/2016/10/Sabias-que-Pizza.png",
+              }]
+            }
           }
         }
-      }
-    };
-    callSendAPI(messageData);
+      };
+      callSendAPI(messageData);
+      sendFindMessage(person.id, searchedPerson.name);
+    });
   });
 }
 
@@ -471,6 +474,7 @@ function sendGiftBuyConfirmationMessage(person, giftNumber) {
     Gift.find({ _id: { $in: searchedPerson.wishlist } }, function(err, gifts) {
       const gift = gifts[giftNumber-1];
       sendTextMessage(person.id, "Okay! We'll scratch that gift from the list.");
+      sendInitialMessage(person);
     });
   });
 }
@@ -491,7 +495,7 @@ function sendTitleWrittenWishlistMessage(person, messageText){
   const gift = new Gift({title: messageText});
   gift.save(function(err, gift){
     person.wishlist.push(gift._id);
-    person.currentperson.currentGiftId = gift._id;
+    person.currentGiftId = gift._id;
     person.state = "urlWrittenWishlist";
     person.save(function(err){console.log(err)});
   })
@@ -587,7 +591,6 @@ Type the title of the gift you want.`;
 }
 
 function sendInitialMessage(person) {
-  console.log('test');
   const message = `Hello ${person.name.substr(0, person.name.indexOf(' '))}!
 We facilitate people to discover what their family and friends want to get for their birthdays!
 Tell me, what do you desire?
@@ -636,13 +639,13 @@ function sendFindMessage(person, name) {
         }
         giftsList += '\nType the number of the gift to get more information about it or type "buy [name of gift]" to confirm you\'re buying this gift';
 
-        sendTextMessage(searchedPerson.id, giftsList);
+        sendTextMessage(person.id, giftsList);
+        person.currentSearchedPersonId = searchedPerson._id;
+        person.state = "shownOtherPersonWishlist";
+        person.save(function(err){console.log(err)});
       } else {
-        sendTextMessage(searchedPerson.id, "This person hasn't created a wishlist yet.");
+        sendTextMessage(person.id, `${searchedPerson.name} hasn't created a wishlist yet.`);
       }
-      person.currentSearchedPersonId = searchedPerson._id;
-      person.state = "shownOtherPersonWishlist";
-      person.save(function(err){console.log(err)});
     })
   });
 }
